@@ -224,14 +224,48 @@ unittest
         typeof( this ) next;
     }
 
-    struct DocFlow
-    {
-        DList!DocOperation operations;
-    }
+    DList!DocOperation operations;
 
-    DocFlow docFlow;
     auto op = new DocOperation();
-    docFlow.operations ~= op;
-    assert( docFlow.operations.front == op );
-    assert( docFlow.operations.back == op );   
+    operations ~= op;
+    assert( operations.front == op );
+    assert( operations.back == op );   
+
+    auto op2 = new DocOperation();
+    operations ~= op2;
+    assert( operations.front == op );
+    assert( operations.back == op2 );   
+
+    auto op3 = new DocOperation();
+    operations ~= op3;
+    assert( operations.front == op );
+    assert( operations.back == op3 );   
+
+    auto op4 = new DocOperation();
+    operations ~= op4;
+    operations.remove( op4 );
+    assert( operations.front == op );
+    assert( operations.back == op3 );   
+
+    operations ~= op4;
+    operations.popBack();
+    assert( operations.front == op );
+    assert( operations.back == op3 );   
+
+    auto op0 = new DocOperation();
+    operations.insertFront( op0 );
+    assert( operations.front == op0 );
+    assert( operations.back == op3 );   
+
+    operations.popFront();
+    assert( operations.front == op );
+    assert( operations.back == op3 );   
+
+    operations.insertBack( op4 );
+    assert( operations.front == op );
+    assert( operations.back == op4 );   
+
+    import std.algorithm.searching : count;
+    assert( operations.count == 4 );
 }
+
