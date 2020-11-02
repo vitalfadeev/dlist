@@ -77,9 +77,9 @@ struct DList( T )
             }
             else
             {        
-                size_t l;
+                size_t l = 1;
 
-                for ( auto cur = front, end = back.next; cur !is end; cur = cur.next )
+                for ( auto cur = front, end = back; cur !is end; cur = cur.next )
                 {
                     l += 1;
                 }
@@ -99,6 +99,42 @@ struct DList( T )
     DListIterator iterator( T a, T b )
     {
         return DListIterator( a, b );
+    }
+
+
+    DListIterator opIndex()
+    {
+        return iterator();
+    }
+
+
+    DListIterator opIndex( T item )
+    {
+        return iterator( item, back );
+    }
+
+
+    auto opSlice( T a, T b )
+    {
+        if ( b is null )
+            return iterator( a, back );
+        else
+            return iterator( a, b.prev );
+    }
+
+
+    auto opSlice( size_t a, T b )
+    {
+        auto aItem = a == 0    ? front : this[ a ];
+        auto bItem = b is null ? back  : b;
+
+        return iterator( aItem, bItem );
+    }
+
+
+    T opDollar( size_t pos )()
+    {
+        return null;
     }
 
 
@@ -293,9 +329,9 @@ struct DList( T )
         }
         else
         {        
-            size_t l;
+            size_t l = 1;
 
-            for ( auto cur = front, end = back.next; cur !is end; cur = cur.next )
+            for ( auto cur = front, end = back; cur !is end; cur = cur.next )
             {
                 l += 1;
             }
@@ -441,3 +477,65 @@ unittest
     operations.remove( operations[ 2 ] );
     assert( operations.length == 2 );
 }
+
+unittest
+{
+    class DrawOperation
+    {
+        wchar theChar;
+
+        typeof( this ) prev;
+        typeof( this ) next;
+
+        this( wchar c )
+        {
+            theChar = c;
+        }
+    }
+
+    DList!DrawOperation operations;
+
+    operations.insertFront( new DrawOperation( 'A' ) );
+    operations.insertFront( new DrawOperation( 'b' ) );
+    operations.insertFront( new DrawOperation( 'c' ) );
+
+    assert( is( typeof( operations[] ) == DList!DrawOperation.DListIterator ) );
+    assert( operations[].front  == operations.front );
+    assert( operations[].back   == operations.back );
+    assert( operations[].length == operations.length );
+
+    assert( operations[ $ ].back == operations.back );
+    assert( operations[ operations.front .. $ ].length == 3 );
+    assert( operations[ 0 .. $ ].length == 3 );
+    assert( operations[ 1 .. $ ].length == 2 );
+
+    size_t i;
+    foreach ( cur; operations[ operations.front .. $ ] )
+    {
+        if ( i == 0 ) assert( cur.theChar == 'c' );
+        if ( i == 1 ) assert( cur.theChar == 'b' );
+        if ( i == 2 ) assert( cur.theChar == 'A' );
+        i += 1;
+    }
+
+    //
+    i = 0;
+    foreach ( cur; operations[ 0 .. $ ] )
+    {
+        if ( i == 0 ) assert( cur.theChar == 'c' );
+        if ( i == 1 ) assert( cur.theChar == 'b' );
+        if ( i == 2 ) assert( cur.theChar == 'A' );
+        i += 1;
+    }
+
+    //
+    i = 2;
+    foreach_reverse ( cur; operations[ 0 .. $ ] )
+    {
+        if ( i == 0 ) assert( cur.theChar == 'c' );
+        if ( i == 1 ) assert( cur.theChar == 'b' );
+        if ( i == 2 ) assert( cur.theChar == 'A' );
+        i -= 1;
+    }
+}
+
