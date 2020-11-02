@@ -16,6 +16,66 @@ struct DList( T )
     T back;
 
 
+    struct DListIterator
+    {
+        T front;
+        T back;
+
+
+        bool empty()
+        {
+            return ( front is null );
+        }
+
+        void popFront()
+        {
+            if ( front !is null )
+            {
+                // 1 element
+                if ( front is back )
+                {
+                    front = null;
+                    back = null;
+                }
+                else // front !is back
+                {
+                    front = front.next;
+                }
+            }
+        }
+
+
+        void popBack()
+        {
+            if ( back !is null )
+            {
+                // 1 element
+                if ( front is back ) 
+                {
+                    front = null;
+                    back  = null;
+                }
+                else // front !is back
+                {
+                    back = back.prev;
+                }
+            }
+        }
+
+
+        typeof( this ) save()
+        {
+            return typeof( this )( front, back );
+        }
+    }
+
+
+    DListIterator iterator()
+    {
+        return DListIterator( front, back );
+    }
+
+
     pragma( inline )
     bool empty()
     {
@@ -28,43 +88,43 @@ struct DList( T )
     {
         if ( front !is null )
         {
-            auto next = front.next;
-            front = next;
-
-            if ( next is null )
-                back = next;
+            // 1 element
+            if ( front is back )
+            {
+                front = null;
+                back = null;
+            }
+            else // front !is back
+            {
+                front = front.next;
+                //front.prev = null;
+            }
         }
-    }
-
-
-    typeof( this ) save()
-    {
-        typeof( this ) saved;
-        saved.front = front;
-        saved.back  = back;
-
-        return saved;
     }
 
 
     T opIndex( size_t i )
     {
-        if ( front !is null )
+        if ( front is null )
+        {
+            return null;
+        }
+        else // front !is null
         {
             size_t counter = i;
 
-            for ( auto op = front; op !is null; op = op.next )
+            for ( auto cur = front, end = back.next; cur !is end; cur = cur.next )
             {
                 if ( counter == 0 )
                 {
-                    return op;
+                    return cur;
                 }
 
                 counter -= 1;
             }
-        }
 
-        return null;
+            return null;
+        }
     }
 
 
@@ -73,11 +133,17 @@ struct DList( T )
     {
         if ( back !is null )
         {
-            auto prev = back.prev;
-            back = prev;
-
-            if ( prev is null )
-                front = prev;
+            // 1 element
+            if ( front is back ) 
+            {
+                front = null;
+                back  = null;
+            }
+            else // front !is back
+            {
+                back = back.prev;
+                //back.next = null;
+            }
         }
     }
 
@@ -87,18 +153,21 @@ struct DList( T )
     {
         if ( front is null )
         {
-            front = op;
-            back  = op;
+            front   = op;
+            back    = op;
+            op.prev = null;
+            op.next = null;
         }
         else // front !is null
         {
             op.prev    = null;
             op.next    = front;
             front.prev = op;
-            front      = op;
 
-            if ( back is null )
+            if ( back is front )
                 back = op;
+
+            front = op;
         }
     }
 
@@ -108,8 +177,10 @@ struct DList( T )
     {
         if ( back is null )
         {
-            front = op;
-            back  = op;
+            front   = op;
+            back    = op;
+            op.prev = null;
+            op.next = null;
         }
         else // back !is null
         {
@@ -117,9 +188,6 @@ struct DList( T )
             op.next    = null;
             back.next = op;
             back      = op;
-
-            if ( front is null )
-                front = op;
         }
     }
 
@@ -130,6 +198,7 @@ struct DList( T )
         if ( cur == front )
         {
             op.next  = cur;
+            op.prev  = null;
             cur.prev = op;
             front    = op;
         }
@@ -147,9 +216,9 @@ struct DList( T )
     pragma( inline )
     void insertAfter( T op, T cur )
     {
-        op.next = cur.next;
+        op.next  = cur.next;
         cur.next = op;
-        op.prev = cur;
+        op.prev  = cur;
 
         if ( back == cur )
             back = op;
@@ -172,10 +241,10 @@ struct DList( T )
         op.prev = null;
         op.next = null;
 
-        if ( front == op )
+        if ( front is op )
             front = next;
 
-        if ( back == op )
+        if ( back is op )
             back = prev;
     }
 
@@ -183,17 +252,7 @@ struct DList( T )
     pragma( inline )
     void opOpAssign( string op : "~" )( T b )
     {
-        if ( empty )
-        {
-            front = b;
-            back  = b;
-        }
-        else // front !is null
-        {
-            b.prev    = back;
-            back.next = b;
-            back      = b;
-        }
+        insertBack( b );
     }
 
 
@@ -204,13 +263,40 @@ struct DList( T )
     }
 
 
+    size_t length()
+    {
+        if ( front is null )
+        {
+            return 0;
+        }
+        else
+        {        
+            size_t l;
+
+            for ( auto cur = front, end = back.next; cur !is end; cur = cur.next )
+            {
+                l += 1;
+            }
+
+            return l;
+        }
+    }
+
+
     void dump()
     {
-        writeln( "dlist:" );
-
-        for ( auto cur = front; cur !is null; cur = cur.next )
+        if ( front is null )
         {
-            writeln( "  ", cur );
+            writeln( "dlist: null" );
+        }
+        else
+        {
+            writeln( "dlist:" );
+
+            for ( auto cur = front, end = back.next; cur !is end; cur = cur.next )
+            {
+                writeln( "  ", cur );
+            }
         }
     }
 }
@@ -263,9 +349,38 @@ unittest
 
     operations.insertBack( op4 );
     assert( operations.front == op );
+    assert( operations.front.next == op2 );
+    assert( operations.back.prev == op3 );   
     assert( operations.back == op4 );   
-
+    assert( operations.back.prev == op3 );   
+    assert( operations.length == 4 );
+ 
     import std.algorithm.searching : count;
-    assert( operations.count == 4 );
-}
+    import std.algorithm.searching : find;
+    assert( operations.iterator.empty == false );
+    assert( operations.iterator.front !is null );
+    assert( operations.iterator.back !is null );
 
+    operations.iterator.popBack();
+    assert( operations.iterator.empty == false );
+    assert( operations.iterator.front !is null );
+    assert( operations.iterator.back !is null );
+    assert( operations.iterator.find( op4 ).empty == false );
+    assert( operations.iterator.find( op4 ).front == op4 );
+
+    operations.popBack();
+    assert( operations.length == 3 );
+
+    operations.popBack();
+    assert( operations.length == 2 );
+
+    operations.popBack();
+    assert( operations.length == 1 );
+    assert( operations.front == operations.back );
+    assert( operations.front is operations.back );
+
+    operations.popBack();
+    assert( operations.front is null );
+    assert( operations.back is null );
+    assert( operations.length == 0 );
+}
