@@ -16,17 +16,19 @@ struct DList( T )
     T back;
 
 
-    struct DListIterator
+    struct DListRange
     {
         T front;
         T back;
 
 
+        pragma( inline )
         bool empty()
         {
             return ( front is null );
         }
 
+        pragma( inline )
         void popFront()
         {
             if ( front !is null )
@@ -45,6 +47,7 @@ struct DList( T )
         }
 
 
+        pragma( inline )
         void popBack()
         {
             if ( back !is null )
@@ -90,48 +93,41 @@ struct DList( T )
     }
 
 
-    DListIterator iterator()
+    pragma( inline )
+    DListRange opIndex()
     {
-        return DListIterator( front, back );
+        return DListRange( front, back );
     }
 
 
-    DListIterator iterator( T a, T b )
+    pragma( inline )
+    DListRange opIndex( T item )
     {
-        return DListIterator( a, b );
+        return DListRange( item, back );
     }
 
 
-    DListIterator opIndex()
-    {
-        return iterator();
-    }
-
-
-    DListIterator opIndex( T item )
-    {
-        return iterator( item, back );
-    }
-
-
+    pragma( inline )
     auto opSlice( T a, T b )
     {
         if ( b is null )
-            return iterator( a, back );
+            return DListRange( a, back );
         else
-            return iterator( a, b.prev );
+            return DListRange( a, b.prev );
     }
 
 
+    pragma( inline )
     auto opSlice( size_t a, T b )
     {
         auto aItem = a == 0    ? front : this[ a ];
         auto bItem = b is null ? back  : b;
 
-        return iterator( aItem, bItem );
+        return DListRange( aItem, bItem );
     }
 
 
+    pragma( inline )
     T opDollar( size_t pos )()
     {
         return null;
@@ -146,7 +142,7 @@ struct DList( T )
 
 
     pragma( inline )
-    void popFront()
+    void removeFront()
     {
         if ( front !is null )
         {
@@ -191,7 +187,7 @@ struct DList( T )
 
 
     pragma( inline )
-    void popBack()
+    void removeBack()
     {
         if ( back !is null )
         {
@@ -392,7 +388,7 @@ unittest
     assert( operations.back == op3 );   
 
     operations ~= op4;
-    operations.popBack();
+    operations.removeBack();
     assert( operations.front == op );
     assert( operations.back == op3 );   
 
@@ -401,7 +397,7 @@ unittest
     assert( operations.front == op0 );
     assert( operations.back == op3 );   
 
-    operations.popFront();
+    operations.removeFront();
     assert( operations.front == op );
     assert( operations.back == op3 );   
 
@@ -415,29 +411,29 @@ unittest
  
     import std.algorithm.searching : count;
     import std.algorithm.searching : find;
-    assert( operations.iterator.empty == false );
-    assert( operations.iterator.front !is null );
-    assert( operations.iterator.back !is null );
+    assert( operations[].empty == false );
+    assert( operations[].front !is null );
+    assert( operations[].back !is null );
 
-    operations.iterator.popBack();
-    assert( operations.iterator.empty == false );
-    assert( operations.iterator.front !is null );
-    assert( operations.iterator.back !is null );
-    assert( operations.iterator.find( op4 ).empty == false );
-    assert( operations.iterator.find( op4 ).front == op4 );
+    operations[].popBack();
+    assert( operations[].empty == false );
+    assert( operations[].front !is null );
+    assert( operations[].back !is null );
+    assert( operations[].find( op4 ).empty == false );
+    assert( operations[].find( op4 ).front == op4 );
 
-    operations.popBack();
+    operations.removeBack();
     assert( operations.length == 3 );
 
-    operations.popBack();
+    operations.removeBack();
     assert( operations.length == 2 );
 
-    operations.popBack();
+    operations.removeBack();
     assert( operations.length == 1 );
     assert( operations.front == operations.back );
     assert( operations.front is operations.back );
 
-    operations.popBack();
+    operations.removeBack();
     assert( operations.front is null );
     assert( operations.back is null );
     assert( operations.length == 0 );
@@ -499,7 +495,7 @@ unittest
     operations.insertFront( new DrawOperation( 'b' ) );
     operations.insertFront( new DrawOperation( 'c' ) );
 
-    assert( is( typeof( operations[] ) == DList!DrawOperation.DListIterator ) );
+    assert( is( typeof( operations[] ) == DList!DrawOperation.DListRange ) );
     assert( operations[].front  == operations.front );
     assert( operations[].back   == operations.back );
     assert( operations[].length == operations.length );
