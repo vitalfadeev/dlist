@@ -67,12 +67,38 @@ struct DList( T )
         {
             return typeof( this )( front, back );
         }
+
+
+        size_t length()
+        {
+            if ( front is null )
+            {
+                return 0;
+            }
+            else
+            {        
+                size_t l;
+
+                for ( auto cur = front, end = back.next; cur !is end; cur = cur.next )
+                {
+                    l += 1;
+                }
+
+                return l;
+            }
+        }
     }
 
 
     DListIterator iterator()
     {
         return DListIterator( front, back );
+    }
+
+
+    DListIterator iterator( T a, T b )
+    {
+        return DListIterator( a, b );
     }
 
 
@@ -163,11 +189,7 @@ struct DList( T )
             op.prev    = null;
             op.next    = front;
             front.prev = op;
-
-            if ( back is front )
-                back = op;
-
-            front = op;
+            front      = op;
         }
     }
 
@@ -348,11 +370,11 @@ unittest
     assert( operations.back == op3 );   
 
     operations.insertBack( op4 );
-    assert( operations.front == op );
+    assert( operations.front      == op );
     assert( operations.front.next == op2 );
-    assert( operations.back.prev == op3 );   
-    assert( operations.back == op4 );   
-    assert( operations.back.prev == op3 );   
+    assert( operations.back.prev  == op3 );
+    assert( operations.back       == op4 );
+    assert( operations.back.prev  == op3 );
     assert( operations.length == 4 );
  
     import std.algorithm.searching : count;
@@ -383,4 +405,39 @@ unittest
     assert( operations.front is null );
     assert( operations.back is null );
     assert( operations.length == 0 );
+}
+
+
+unittest
+{
+    class DrawOperation
+    {
+        wchar theChar;
+
+        typeof( this ) prev;
+        typeof( this ) next;
+
+        this( wchar c )
+        {
+            theChar = c;
+        }
+    }
+
+    DList!DrawOperation operations;
+
+    operations.insertFront( new DrawOperation( 'A' ) );
+    operations.insertFront( new DrawOperation( 'b' ) );
+    operations.insertFront( new DrawOperation( 'c' ) );
+
+    assert( operations.length == 3 );
+    assert( operations.front.theChar           == 'c' );
+    assert( operations.front.next.theChar      == 'b' );
+    assert( operations.front.next.next.theChar == 'A' );
+    assert( operations.back.theChar            == 'A' );
+    assert( operations.back.prev.theChar       == 'b' );
+    assert( operations.back.prev.prev.theChar  == 'c' );
+
+
+    operations.remove( operations[ 2 ] );
+    assert( operations.length == 2 );
 }
