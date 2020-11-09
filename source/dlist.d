@@ -240,8 +240,43 @@ struct DList( T )
         {
             op.prev    = back;
             op.next    = null;
-            back.next = op;
-            back      = op;
+            back.next  = op;
+            back       = op;
+        }
+    }
+
+
+    pragma( inline )
+    void insertBack( T[] ops )
+    {
+        // Double-links
+        auto opPrev = ops[ 0 ];
+
+        foreach( opCurr; ops[ 1 .. $ ] )
+        {            
+            opPrev.next = opCurr;
+            opCurr.prev = opPrev;
+
+            opPrev = opCurr;
+        }
+
+        auto opsFront = ops[ 0 ];
+        auto opsBack  = ops[ $-1 ];
+
+        //
+        if ( back is null )
+        {
+            front         = opsFront;
+            back          = opsBack;
+            opsFront.prev = null;
+            opsBack.next  = null;
+        }
+        else // back !is null
+        {
+            opsFront.prev = back;
+            opsBack.next  = null;
+            back.next     = opsFront;
+            back          = opsBack;
         }
     }
 
@@ -260,9 +295,46 @@ struct DList( T )
         {
             auto prev = cur.prev;
             prev.next = op;
-            op.prev = prev;
-            op.next  = cur;
-            cur.prev = op;
+            op.prev   = prev;
+            op.next   = cur;
+            cur.prev  = op;
+        }
+    }
+
+
+    pragma( inline )
+    void insertBefore( T[] ops, T cur )
+    {
+        // Double-links
+        auto opPrev = ops[ 0 ];
+
+        foreach( opCurr; ops[ 1 .. $ ] )
+        {            
+            opPrev.next = opCurr;
+            opCurr.prev = opPrev;
+
+            opPrev = opCurr;
+        }
+
+        auto opsFront = ops[ 0 ];
+        auto opsBack  = ops[ $-1 ];
+
+        // Insert
+        if ( cur == front )
+        {
+            opsFront.prev = null;
+            opsBack.next  = cur;
+            cur.prev      = opsBack;
+            front         = opsFront;
+        }
+        else // cur != front
+        {
+            auto prev = cur.prev;
+
+            opsFront.prev = prev;
+            opsBack.next  = cur;
+            prev.next     = opsFront;
+            cur.prev      = opsBack;
         }
     }
 
