@@ -352,6 +352,14 @@ struct DList( T )
 
 
     pragma( inline )
+    void removeAll()
+    {
+        front = null;
+        back  = null;
+    }
+
+
+    pragma( inline )
     void remove( T op )
     {
         // Remove Draw Operation
